@@ -1,0 +1,131 @@
+[{
+  "alert_id": "ALT-2001",
+  "timestamp": "2026-03-31T08:15:00Z",
+  "source": "Azure AD",
+  "alert_type": "Multiple Failed Logins",
+  "raw_log": "45 failed login attempts detected for user admin@company.com from IP 185.234.72.11 within 12 minutes. Geo-location anomaly detected (Russia).",
+  "user": "admin@company.com",
+  "host": "N/A",
+  "ip_address": "185.234.72.11"
+},
+{
+  "alert_id": "ALT-2002",
+  "timestamp": "2026-03-31T08:45:00Z",
+  "source": "Secure Email Gateway",
+  "alert_type": "Phishing Email Detected",
+  "raw_log": "User received phishing email with attachment payroll_update.zip from spoofed sender hr-support@micr0soft-secure.com containing malicious macro.",
+  "user": "employee@company.com",
+  "host": "N/A",
+  "ip_address": null
+},
+{
+  "alert_id": "ALT-2003",
+  "timestamp": "2026-03-31T09:05:00Z",
+  "source": "Microsoft Defender",
+  "alert_type": "Suspicious PowerShell Execution",
+  "raw_log": "Encoded PowerShell command executed on FINANCE-PC-22 by user j.doe. Command attempted connection to external IP 91.214.124.55 using obfuscated script.",
+  "user": "j.doe",
+  "host": "FINANCE-PC-22",
+  "ip_address": "91.214.124.55"
+},
+{
+  "alert_id": "ALT-2004",
+  "timestamp": "2026-03-31T09:30:00Z",
+  "source": "EDR",
+  "alert_type": "Malware Detected",
+  "raw_log": "Trojan.Win32.Agent detected on endpoint HR-PC-04. File hash: a94a8fe5ccb19ba61c4c0873d391e987982fbbd3. Process initiated by user hr.admin.",
+  "user": "hr.admin",
+  "host": "HR-PC-04",
+  "ip_address": null
+},
+{
+  "alert_id": "ALT-2005",
+  "timestamp": "2026-03-31T10:00:00Z",
+  "source": "Azure AD",
+  "alert_type": "Impossible Travel Login Detected",
+  "raw_log": "User admin@company.com logged in from Dubai, UAE at 09:45 AM and from Paris, France at 10:00 AM (15 minutes apart). IP 185.234.72.11 flagged as high-risk. MFA challenge failed.",
+  "user": "admin@company.com",
+  "host": "N/A",
+  "ip_address": "185.234.72.11"
+},
+{
+  "alert_id": "ALT-2006",
+  "timestamp": "2026-03-31T09:50:00Z",
+  "source": "Firewall",
+  "alert_type": "Suspicious Outbound Connection",
+  "raw_log": "Endpoint ENG-LAPTOP-09 initiated repeated outbound connections to known malicious domain badcontrolserver.ru over port 443. Beaconing pattern detected every 60 seconds.",
+  "user": "eng.user",
+  "host": "ENG-LAPTOP-09",
+  "ip_address": "185.199.110.153"
+},
+{
+  "alert_id": "ALT-2007",
+  "timestamp": "2026-03-31T10:05:00Z",
+  "source": "Windows Security Logs",
+  "alert_type": "Privilege Escalation Detected",
+  "raw_log": "User temp.user added to local administrators group on host SALES-PC-11 without prior authorization. Event ID 4728 triggered.",
+  "user": "temp.user",
+  "host": "SALES-PC-11",
+  "ip_address": null
+},
+{
+  "alert_id": "ALT-2008",
+  "timestamp": "2026-03-31T10:20:00Z",
+  "source": "DLP System",
+  "alert_type": "Data Exfiltration Detected",
+  "raw_log": "Large data transfer (2.5GB) detected from FINANCE-SERVER-01 to external IP 103.55.88.12 over FTP. Sensitive financial documents flagged.",
+  "user": "finance.user",
+  "host": "FINANCE-SERVER-01",
+  "ip_address": "103.55.88.12"
+},
+{
+  "alert_id": "ALT-2009",
+  "timestamp": "2026-03-31T10:40:00Z",
+  "source": "IDS",
+  "alert_type": "Port Scan Detected",
+  "raw_log": "Multiple connection attempts detected from IP 45.33.21.9 scanning ports 20-1024 on internal server WEB-SERVER-02.",
+  "user": null,
+  "host": "WEB-SERVER-02",
+  "ip_address": "45.33.21.9"
+},
+{
+  "alert_id": "ALT-2010",
+  "timestamp": "2026-03-31T11:00:00Z",
+  "source": "EDR",
+  "alert_type": "Credential Dumping Activity",
+  "raw_log": "Mimikatz-like behavior detected on endpoint ADMIN-PC-01. LSASS memory access attempt observed.",
+  "user": "admin.user",
+  "host": "ADMIN-PC-01",
+  "ip_address": null
+},
+{
+  "alert_id": "ALT-2011",
+  "timestamp": "2026-03-31T11:15:00Z",
+  "source": "Web Proxy",
+  "alert_type": "Suspicious File Download",
+  "raw_log": "User downloaded executable file invoice_generator.exe from untrusted domain free-software-downloads.xyz.",
+  "user": "employee@company.com",
+  "host": "USER-PC-07",
+  "ip_address": null
+},
+{
+  "alert_id": "ALT-2012",
+  "timestamp": "2026-03-31T11:30:00Z",
+  "source": "SIEM",
+  "alert_type": "Lateral Movement Detected",
+  "raw_log": "Unusual RDP session initiated from HR-PC-04 to FINANCE-SERVER-02 using privileged account hr.admin outside business hours.",
+  "user": "hr.admin",
+  "host": "FINANCE-SERVER-02",
+  "ip_address": null
+},
+{
+  "alert_id": "ALT-2013",
+  "timestamp": "2026-03-31T11:50:00Z",
+  "source": "DNS Monitoring",
+  "alert_type": "DNS Tunneling Suspected",
+  "raw_log": "High volume of DNS requests with encoded subdomains observed from endpoint DEV-PC-03 to suspicious domain data-exfil.xyz.",
+  "user": "dev.user",
+  "host": "DEV-PC-03",
+  "ip_address": null
+}
+]

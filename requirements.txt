@@ -1,0 +1,6 @@
+datasets
+python-dotenv
+groq
+langchain-groq
+langchain-openai
+streamlit
