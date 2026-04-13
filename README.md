@@ -103,7 +103,6 @@ Implemented:
 - Synthetic dataset only (`sample_alerts.json`).
 - LLM outputs are probabilistic and can vary by run/model version.
 - Guardrails improve safety but do not eliminate false positives/negatives.
-- MITRE mapping depends on configured alert-type mapping coverage.
 
 ## ✅ Recommended Next Steps
 
