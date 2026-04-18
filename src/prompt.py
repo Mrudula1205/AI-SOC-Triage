@@ -11,6 +11,8 @@ Rules:
 - confidence must be a number between 0 and 1
 - recommended_actions must contain 3 to 5 short strings
 - mitre_technique should include both technique name and technique ID when possible
+- If `_threat_intel` exists in the input, use it as supporting evidence (especially `known_malicious` and `reputation_score`)
+- If `_rule_signals` exists, treat it as deterministic SOC baseline guidance (respect `severity_floor`, `confidence_floor`, and `mitre_hint`)
 
 OUTPUT SCHEMA (return exactly these keys, no extras):
 {

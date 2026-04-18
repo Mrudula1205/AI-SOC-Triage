@@ -304,6 +304,65 @@ def _render_alert_card(alert: dict[str, Any], triage: dict[str, Any]) -> None:
     )
 
 
+def _to_splunk_soar_playbook(items: list[dict[str, Any]]) -> dict[str, Any]:
+    timestamp = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
+    blocks = []
+
+    for item in items:
+        alert = item.get("alert", {})
+        triage = item.get("triage", {})
+        actions = triage.get("playbook", [])
+        if not isinstance(actions, list):
+            actions = []
+
+        if not actions:
+            actions = ["Review alert telemetry and validate impact"]
+
+        for action in actions:
+            action_text = str(action).strip() or "Review and investigate"
+            blocks.append(
+                {
+                    "name": action_text,
+                    "type": "action",
+                    "action": "run query",
+                    "parameters": {
+                        "alert_id": str(alert.get("alert_id", "UNKNOWN")),
+                        "severity": str(triage.get("severity", "INFO")),
+                        "mitre_technique": str(triage.get("mitre_technique", "Unknown")),
+                        "mitre_tactic": str(triage.get("mitre_tactic", "Unknown")),
+                        "note": str(triage.get("summary", "")),
+                    },
+                }
+            )
+
+    return {
+        "name": "SOC Triage Export Playbook",
+        "description": "Mock Splunk SOAR playbook generated from triaged alerts",
+        "created_time": timestamp,
+        "platform": "Splunk SOAR",
+        "start": "block_1" if blocks else None,
+        "blocks": {
+            f"block_{idx}": block for idx, block in enumerate(blocks, start=1)
+        },
+    }
+
+
+def _soar_preview_payload(soar_payload: dict[str, Any]) -> dict[str, Any]:
+    blocks = soar_payload.get("blocks", {})
+    first_block = None
+    for block_id in sorted(blocks.keys()):
+        first_block = blocks[block_id]
+        break
+
+    return {
+        "format": "Splunk SOAR",
+        "playbook_name": soar_payload.get("name"),
+        "start_block": soar_payload.get("start"),
+        "block_count": len(blocks),
+        "first_block": first_block,
+    }
+
+
 def main() -> None:
     st.set_page_config(page_title="SOC Triage Assistant", layout="wide")
     _inject_css()
@@ -335,6 +394,9 @@ def main() -> None:
             checked = c2.checkbox(sev, value=True, key=f"filter_{sev}")
             if checked:
                 selected.add(sev)
+
+        st.markdown("#### SOAR Export")
+        export_soar = st.toggle("Export as Splunk SOAR playbook", value=False)
 
     alerts: list[dict[str, Any]] = []
     source_name = "sample_alerts.json"
@@ -442,6 +504,22 @@ def main() -> None:
         file_name="triage_results.json",
         mime="application/json",
     )
+
+    if export_soar:
+        soar_payload = _to_splunk_soar_playbook(filtered)
+        soar_file_name = "splunk_soar_playbook_export.json"
+
+        st.markdown("### SOAR payload preview")
+        st.caption("Preview of generated Splunk SOAR playbook metadata and first execution step.")
+        preview_payload = _soar_preview_payload(soar_payload)
+        st.code(json.dumps(preview_payload, indent=2), language="json")
+
+        st.download_button(
+            "Download Splunk SOAR playbook JSON",
+            data=json.dumps(soar_payload, indent=2),
+            file_name=soar_file_name,
+            mime="application/json",
+        )
 
 
 if __name__ == "__main__":

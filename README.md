@@ -70,7 +70,15 @@ Create a `.env` file in the project root:
 ```env
 GROQ_API=<your_groq_api_key>
 MODEL=llama-3.3-70b-versatile
+ABUSEIPDB_API_KEY=<your_abuseipdb_api_key>
+THREAT_INTEL_TIMEOUT_SEC=3
+MALICIOUS_SCORE_THRESHOLD=25
 ```
+
+Threat-intel enrichment notes:
+- The pipeline extracts IP addresses from `raw_log` and enriches public IPs with AbuseIPDB reputation.
+- Invalid/non-public IPs are skipped safely and triage continues.
+- If `ABUSEIPDB_API_KEY` is not set, triage still runs without external enrichment.
 
 ### 3. Run dashboard
 
@@ -109,3 +117,18 @@ Implemented:
 1. Add an evaluation runner for severity/MITRE/escalation accuracy and fallback rate.
 2. Add mocked or real API integrations (SIEM ingest, ticket creation).
 3. Add unit tests for sanitization and guardrail edge cases.
+
+## 📊 Evaluation Metrics Runner
+
+Run batch evaluation across `sample_alerts.json` with expected labels from `../archive/expected_outputs.json`:
+
+```bash
+python eval_runner.py
+```
+
+The script prints a table with:
+- Severity accuracy %
+- MITRE technique accuracy %
+- Fallback rate %
+- Average confidence score
+- Average latency per alert (ms)

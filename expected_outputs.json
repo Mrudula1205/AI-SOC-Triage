@@ -1,0 +1,145 @@
+[
+  {
+    "alert_id": "ALT-2001",
+    "expected_severity": "High",
+    "expected_mitre_tactic": "Credential Access",
+    "expected_mitre_technique_id": "T1110",
+    "expected_actions_should_include": [
+      "block ip",
+      "password reset",
+      "enable mfa"
+    ]
+  },
+  {
+    "alert_id": "ALT-2002",
+    "expected_severity": "High",
+    "expected_mitre_tactic": "Initial Access",
+    "expected_mitre_technique_id": "T1566",
+    "expected_actions_should_include": [
+      "quarantine email",
+      "block sender",
+      "scan endpoint"
+    ]
+  },
+  {
+    "alert_id": "ALT-2003",
+    "expected_severity": "High",
+    "expected_mitre_tactic": "Execution",
+    "expected_mitre_technique_id": "T1059.001",
+    "expected_actions_should_include": [
+      "isolate host",
+      "analyze powershell",
+      "block ip"
+    ]
+  },
+  {
+    "alert_id": "ALT-2004",
+    "expected_severity": "High",
+    "expected_mitre_tactic": "Execution",
+    "expected_mitre_technique_id": "T1204.002",
+    "expected_actions_should_include": [
+      "isolate endpoint",
+      "remove malware",
+      "scan system"
+    ]
+  },
+  {
+    "alert_id": "ALT-2005",
+    "expected_severity": "High",
+    "expected_mitre_tactic": "Credential Access",
+    "expected_mitre_technique_id": "T1078",
+    "expected_actions_should_include": [
+      "reset password",
+      "terminate sessions",
+      "block ip"
+    ]
+  },
+  {
+    "alert_id": "ALT-2006",
+    "expected_severity": "High",
+    "expected_mitre_tactic": "Command and Control",
+    "expected_mitre_technique_id": "T1071",
+    "expected_actions_should_include": [
+      "block domain",
+      "isolate host",
+      "analyze traffic"
+    ]
+  },
+  {
+    "alert_id": "ALT-2007",
+    "expected_severity": "High",
+    "expected_mitre_tactic": "Privilege Escalation",
+    "expected_mitre_technique_id": "T1098",
+    "expected_actions_should_include": [
+      "remove privileges",
+      "review logs",
+      "verify account"
+    ]
+  },
+  {
+    "alert_id": "ALT-2008",
+    "expected_severity": "High",
+    "expected_mitre_tactic": "Exfiltration",
+    "expected_mitre_technique_id": "T1048",
+    "expected_actions_should_include": [
+      "block transfer",
+      "isolate server",
+      "investigate data"
+    ]
+  },
+  {
+    "alert_id": "ALT-2009",
+    "expected_severity": "Medium",
+    "expected_mitre_tactic": "Reconnaissance",
+    "expected_mitre_technique_id": "T1595",
+    "expected_actions_should_include": [
+      "block ip",
+      "monitor traffic",
+      "review logs"
+    ]
+  },
+  {
+    "alert_id": "ALT-2010",
+    "expected_severity": "High",
+    "expected_mitre_tactic": "Credential Access",
+    "expected_mitre_technique_id": "T1003",
+    "expected_actions_should_include": [
+      "isolate system",
+      "reset credentials",
+      "investigate activity"
+    ]
+  },
+  {
+    "alert_id": "ALT-2011",
+    "expected_severity": "High",
+    "expected_mitre_tactic": "Initial Access",
+    "expected_mitre_technique_id": "T1189",
+    "expected_actions_should_include": [
+      "block domain",
+      "quarantine file",
+      "scan system"
+    ]
+  },
+  {
+    "alert_id": "ALT-2012",
+    "expected_severity": "High",
+    "expected_mitre_tactic": "Lateral Movement",
+    "expected_mitre_technique_id": "T1021.001",
+    "expected_actions_should_include": [
+      "review rdp",
+      "reset account",
+      "isolate system"
+    ]
+  },
+  {
+    "alert_id": "ALT-2013",
+    "expected_severity": "High",
+    "expected_mitre_tactic": "Command and Control",
+    "expected_mitre_technique_id": "T1572",
+    "expected_actions_should_include": [
+      "isolate endpoint",
+      "block domain",
+      "analyze dns traffic"
+    ]
+  }
+]
