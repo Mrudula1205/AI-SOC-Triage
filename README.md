@@ -1,26 +1,35 @@
 # AI SOC Triage Assistant
 
-## 🛡 Overview
+## Overview
 
-AI-assisted SOC triage prototype that analyzes security alerts with an LLM, enforces validation guardrails, maps to MITRE ATT&CK, and presents results in a Streamlit dashboard.
+AI-assisted SOC triage prototype that combines:
 
-This project is designed to demonstrate safe, structured AI usage in SOC workflows.
+- LLM triage generation (Groq)
+- deterministic security guardrails
+- MITRE ATT&CK mapping checks
+- deterministic rule-engine baselines
+- optional threat-intel IOC enrichment
+- analyst-facing Streamlit dashboard
+
+The project demonstrates safe, structured AI usage for SOC workflows with explicit fallback behavior when model output is invalid.
 
 ![SOC Triage Dashboard](Images/App.png)
 
-## ⚙️ Workflow
+## Current Workflow
 
-- Ingests JSON security alerts (`sample_alerts.json` or uploaded JSON in the dashboard).
-- Sanitizes untrusted alert text before sending it to the LLM.
-- Uses Groq LLM inference to produce structured triage output.
-- Validates output quality using deterministic guardrails.
-- Verifies MITRE tactic/technique consistency against `mitre_mapping.json`.
-- Returns a safe fallback response when parsing or validation fails.
-- Displays triage results in a filterable Streamlit dashboard.
+1. Ingest alerts from `sample_alerts.json` or uploaded JSON in the dashboard.
+2. Sanitize untrusted text fields before model inference.
+3. Enrich public IPv4 IOCs with AbuseIPDB (optional, non-blocking).
+4. Generate deterministic rule signals (`severity_floor`, `confidence_floor`, MITRE hints).
+5. Invoke Groq LLM for structured triage.
+6. Apply rule-based post-processing overrides to enforce baseline safety.
+7. Validate final output with guardrails and MITRE mapping.
+8. Return a safe fallback output when parse/validation fails.
+9. Display filterable alert cards and export outputs in Streamlit.
 
-## 📦 Core Output Schema
+## Core Output Schema
 
-Each triaged alert returns:
+Each triaged alert includes:
 
 - `alert_id`
 - `incident_summary`
@@ -33,29 +42,35 @@ Each triaged alert returns:
 - `escalation_required`
 - `false_positive_note`
 
-## 🧭 Architecture
+## Key Implemented Capabilities
 
-1. Alert input (`sample_alerts.json` or uploaded file)
-2. Input sanitization (`llm_engine.py` + `config.py`)
-3. LLM triage generation (Groq)
-4. JSON parsing and schema checks
-5. Guardrail validation (`guardrails.py`)
-6. MITRE mapping validation (`mitre_mapping.json`)
-7. Safe fallback on failure
-8. UI presentation (`streamlit_app.py`)
+- Input sanitization against prompt-injection-like patterns.
+- Deterministic output validation and normalization.
+- MITRE tactic/technique consistency checks.
+- Threat-intel IOC enrichment with AbuseIPDB for public IPs.
+- Hybrid triage model: deterministic rules + LLM reasoning.
+- Splunk SOAR mock playbook export with in-app preview.
+- Batch KPI evaluation runner (`eval_runner.py`).
+- Reliability tests covering enrichment and rule behavior.
+- Incident support runbook for demo/ops troubleshooting.
 
-## 🗂 Project Structure
+## Project Structure
 
-- `streamlit_app.py`: dashboard UI and triage orchestration
-- `llm_engine.py`: LLM call path, sanitization, parse handling
-- `guardrails.py`: deterministic output validation and fallback logic
-- `prompt.py`: system prompt with strict output contract
-- `config.py`: sanitization patterns and safety constants
-- `mitre_mapping.json`: expected MITRE mappings by alert type
-- `sample_alerts.json`: synthetic alert dataset
-- `test_llm.py`: CLI runner for batch triage output
+- `app.py`: Streamlit dashboard, triage orchestration, filters, SOAR export.
+- `eval_runner.py`: batch KPI metrics (accuracy, fallback, confidence, latency).
+- `src/llm_engine.py`: sanitize/enrich/rule/LLM/validate orchestration.
+- `src/rule_engine.py`: deterministic rule signal generation and override logic.
+- `src/guardrails.py`: schema + range + MITRE validation and fallback handling.
+- `src/prompt.py`: strict JSON prompt contract.
+- `src/config.py`: sanitization and safety constants.
+- `mitre_mapping.json`: expected MITRE mappings by alert type.
+- `sample_alerts.json`: synthetic alert dataset.
+- `expected_outputs.json`: expected labels for evaluation.
+- `INCIDENT_SUPPORT_RUNBOOK.md`: operational troubleshooting checklist.
 
-## 🚀 Setup
+Note: reliability tests are in the workspace-level file `../tests/test_soc_reliability.py`.
+
+## Setup
 
 ### 1. Install dependencies
 
@@ -65,20 +80,23 @@ pip install -r requirements.txt
 
 ### 2. Configure environment variables
 
-Create a `.env` file in the project root:
+Create `.env` in the project root:
 
 ```env
 GROQ_API=<your_groq_api_key>
 MODEL=llama-3.3-70b-versatile
+
+# Optional threat-intel enrichment
 ABUSEIPDB_API_KEY=<your_abuseipdb_api_key>
 THREAT_INTEL_TIMEOUT_SEC=3
 MALICIOUS_SCORE_THRESHOLD=25
 ```
 
-Threat-intel enrichment notes:
-- The pipeline extracts IP addresses from `raw_log` and enriches public IPs with AbuseIPDB reputation.
-- Invalid/non-public IPs are skipped safely and triage continues.
-- If `ABUSEIPDB_API_KEY` is not set, triage still runs without external enrichment.
+Threat-intel enrichment behavior:
+
+- Extracts IPv4 candidates from `raw_log`.
+- Skips invalid/private/non-public IPs safely.
+- Continues triage even when lookup fails or API key is missing.
 
 ### 3. Run dashboard
 
@@ -86,49 +104,46 @@ Threat-intel enrichment notes:
 streamlit run app.py
 ```
 
-## 🔐 Security and Safety Design
+## Evaluation Metrics Runner
 
-- Treats alert data as untrusted input.
-- Sanitizes prompt-injection-like phrases before model inference.
-- Removes control characters and caps field length sent to model.
-- Uses strict output schema expectations.
-- Applies deterministic guardrails before accepting model output.
-- Falls back to manual-review-safe output when uncertain.
-
-## 📈 Current Status
-
-This is a strong prototype for AI-assisted SOC triage workflows.
-
-Implemented:
-
-- LLM triage with guardrails
-- MITRE ATT&CK mapping validation
-- Input sanitization
-- Streamlit analyst-facing dashboard
-
-## ⚠️ Known Limitations
-
-- Synthetic dataset only (`sample_alerts.json`).
-- LLM outputs are probabilistic and can vary by run/model version.
-- Guardrails improve safety but do not eliminate false positives/negatives.
-
-## ✅ Recommended Next Steps
-
-1. Add an evaluation runner for severity/MITRE/escalation accuracy and fallback rate.
-2. Add mocked or real API integrations (SIEM ingest, ticket creation).
-3. Add unit tests for sanitization and guardrail edge cases.
-
-## 📊 Evaluation Metrics Runner
-
-Run batch evaluation across `sample_alerts.json` with expected labels from `../archive/expected_outputs.json`:
+Run batch evaluation using `sample_alerts.json` and `expected_outputs.json`:
 
 ```bash
 python eval_runner.py
 ```
 
-The script prints a table with:
+The runner prints:
+
+- Total/evaluated alerts
+- Missing expected labels
 - Severity accuracy %
 - MITRE technique accuracy %
 - Fallback rate %
 - Average confidence score
 - Average latency per alert (ms)
+
+## Reliability Tests
+
+From workspace root (`SOC Analysis`):
+
+```bash
+python tests/test_soc_reliability.py
+```
+
+Current coverage includes:
+
+- invalid/private IP handling in enrichment
+- non-blocking enrichment lookup failure
+- fallback-output detection
+- deterministic rule detection
+- post-LLM rule override enforcement
+
+## Security and Safety Design
+
+- Treats alert payloads as untrusted input.
+- Sanitizes dangerous patterns and control characters.
+- Caps field lengths sent to LLM.
+- Enforces strict output schema and value constraints.
+- Uses deterministic guardrails and safe fallback output.
+- Preserves triage availability when external enrichment is unavailable.
+
