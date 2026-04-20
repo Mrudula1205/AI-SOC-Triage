@@ -1,14 +1,13 @@
 import json
 import os
-import ipaddress
-import re
-from urllib import error, parse, request
 from dotenv import load_dotenv
 load_dotenv()  
 from groq import Groq
 from .guardrails import load_mitre_mapping, validate_llm_output, build_fallback_output
 from .rule_engine import evaluate_rule_signals, apply_rule_overrides
 from .prompt import SYSTEM_PROMPT
+from .enrichment import build_threat_intel_context, lookup_abuseipdb
+from .postprocess import parse_model_output, finalize_output
 from .config import (
     CONTROL_CHARS_PATTERN,
     MAX_LLM_FIELD_LENGTH,
@@ -29,7 +28,6 @@ client = Groq(api_key=GROQ_API_KEY)
 ABUSEIPDB_API_KEY = os.getenv("ABUSEIPDB_API_KEY", "").strip()
 THREAT_INTEL_TIMEOUT_SEC = float(os.getenv("THREAT_INTEL_TIMEOUT_SEC", "3"))
 MALICIOUS_SCORE_THRESHOLD = int(os.getenv("MALICIOUS_SCORE_THRESHOLD", "25"))
-IPV4_CANDIDATE_PATTERN = re.compile(r"\b(?:\d{1,3}\.){3}\d{1,3}\b")
 
 def _sanitize_text(value: str) -> str:
     cleaned = CONTROL_CHARS_PATTERN.sub(" ", value)
@@ -57,92 +55,33 @@ def sanitize_input(alert: dict) -> dict:
     return _walk(alert)
 
 
-def _extract_ip_candidates(raw_log: str) -> list[str]:
-    seen = set()
-    candidates = []
-    for ip in IPV4_CANDIDATE_PATTERN.findall(raw_log):
-        if ip not in seen:
-            seen.add(ip)
-            candidates.append(ip)
-    return candidates
-
-
 def _lookup_abuseipdb(ip: str) -> dict:
-    query = parse.urlencode({"ipAddress": ip, "maxAgeInDays": 90})
-    url = f"https://api.abuseipdb.com/api/v2/check?{query}"
-    req = request.Request(
-        url,
-        headers={"Key": ABUSEIPDB_API_KEY, "Accept": "application/json"},
-        method="GET",
+    return lookup_abuseipdb(
+        ip=ip,
+        api_key=ABUSEIPDB_API_KEY,
+        timeout_sec=THREAT_INTEL_TIMEOUT_SEC,
+        malicious_score_threshold=MALICIOUS_SCORE_THRESHOLD,
     )
-
-    with request.urlopen(req, timeout=THREAT_INTEL_TIMEOUT_SEC) as response:
-        payload = json.loads(response.read().decode("utf-8"))
-
-    data = payload.get("data", {})
-    score = int(data.get("abuseConfidenceScore", 0))
-
-    return {
-        "ip": ip,
-        "reputation_score": score,
-        "known_malicious": score >= MALICIOUS_SCORE_THRESHOLD,
-        "country_code": data.get("countryCode") or "",
-        "usage_type": data.get("usageType") or "",
-        "isp": data.get("isp") or "",
-        "total_reports": int(data.get("totalReports", 0) or 0),
-        "last_reported_at": data.get("lastReportedAt") or "",
-        "source": "abuseipdb",
-    }
 
 
 def _build_threat_intel_context(alert: dict) -> dict:
-    raw_log = str(alert.get("raw_log", ""))
-    ip_candidates = _extract_ip_candidates(raw_log)
+    return build_threat_intel_context(
+        alert=alert,
+        api_key=ABUSEIPDB_API_KEY,
+        lookup_fn=_lookup_abuseipdb,
+    )
 
-    if not ip_candidates:
-        return {
-            "provider": "abuseipdb",
-            "enabled": bool(ABUSEIPDB_API_KEY),
-            "ips_found": [],
-            "ioc_enrichment": [],
-            "skipped_iocs": [],
-        }
 
-    enrichment = []
-    skipped = []
-    valid_public_ips = []
-
-    for ip in ip_candidates:
-        try:
-            parsed_ip = ipaddress.ip_address(ip)
-        except ValueError:
-            skipped.append({"ip": ip, "reason": "invalid_ip_format"})
-            continue
-
-        if not parsed_ip.is_global:
-            skipped.append({"ip": ip, "reason": "not_public_ip"})
-            continue
-
-        valid_public_ips.append(ip)
-
-        if not ABUSEIPDB_API_KEY:
-            skipped.append({"ip": ip, "reason": "api_key_not_configured"})
-            continue
-
-        try:
-            enrichment.append(_lookup_abuseipdb(ip))
-        except error.HTTPError as exc:
-            skipped.append({"ip": ip, "reason": f"api_error_{exc.code}"})
-        except Exception:
-            skipped.append({"ip": ip, "reason": "lookup_failed"})
-
-    return {
-        "provider": "abuseipdb",
-        "enabled": bool(ABUSEIPDB_API_KEY),
-        "ips_found": valid_public_ips,
-        "ioc_enrichment": enrichment,
-        "skipped_iocs": skipped,
-    }
+def _finalize_output(parsed: dict, original_alert: dict, rule_signals: dict) -> dict:
+    return finalize_output(
+        parsed=parsed,
+        original_alert=original_alert,
+        rule_signals=rule_signals,
+        apply_rule_overrides_fn=apply_rule_overrides,
+        load_mitre_mapping_fn=load_mitre_mapping,
+        validate_llm_output_fn=validate_llm_output,
+        build_fallback_output_fn=build_fallback_output,
+    )
 
 def analyze_with_llm(alert: dict):
     original_alert = alert
@@ -161,37 +100,25 @@ Analyze this security alert:
 
 Return structured JSON output.
 """
+
     try:
         response = client.chat.completions.create(
             model=MODEL,
             messages=[
                 {"role": "system", "content": SYSTEM_PROMPT},
-                {"role": "user", "content": user_prompt}
+                {"role": "user", "content": user_prompt},
             ],
-            temperature=0.2
+            temperature=0.2,
         )
-
         output_text = response.choices[0].message.content
-    except Exception as e:
-        print(f"Error calling LLM: {e}")
+    except Exception as exc:
+        print(f"Error calling LLM: {exc}")
         return build_fallback_output(original_alert)
-
 
     try:
-        parsed = json.loads(output_text)
-    except Exception as e:
-        print(f"Error parsing LLM output: {e}")
+        parsed = parse_model_output(output_text)
+    except Exception as exc:
+        print(f"Error parsing LLM output: {exc}")
         return build_fallback_output(original_alert)
 
-    if isinstance(parsed, dict):
-        parsed = apply_rule_overrides(parsed, rule_signals)
-
-    mitre_mapping = load_mitre_mapping()
-    validation = validate_llm_output(parsed, original_alert, mitre_mapping)
-
-    if validation["is_valid"]:
-        return validation["normalized_output"]
-    else: 
-        print(validation["errors"])
-
-    return build_fallback_output(original_alert)
+    return _finalize_output(parsed, original_alert, rule_signals)

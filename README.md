@@ -58,7 +58,9 @@ Each triaged alert includes:
 
 - `app.py`: Streamlit dashboard, triage orchestration, filters, SOAR export.
 - `eval_runner.py`: batch KPI metrics (accuracy, fallback, confidence, latency).
-- `src/llm_engine.py`: sanitize/enrich/rule/LLM/validate orchestration.
+- `src/llm_engine.py`: core triage pipeline + environment/client wiring.
+- `src/postprocess.py`: model-output parsing and final validation/fallback routing.
+- `src/enrichment.py`: IOC extraction and AbuseIPDB enrichment helpers.
 - `src/rule_engine.py`: deterministic rule signal generation and override logic.
 - `src/guardrails.py`: schema + range + MITRE validation and fallback handling.
 - `src/prompt.py`: strict JSON prompt contract.
@@ -84,7 +86,7 @@ Create `.env` in the project root:
 
 ```env
 GROQ_API=<your_groq_api_key>
-MODEL=llama-3.3-70b-versatile
+MODEL=llama-openai/gpt-oss-120b
 
 # Optional threat-intel enrichment
 ABUSEIPDB_API_KEY=<your_abuseipdb_api_key>
